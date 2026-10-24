@@ -1,0 +1,32 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+# Overlay used only after private connectivity between the three hosts is configured.
+# Run selected services with --no-deps, as documented in docs/DESPLIEGUE_EQUIPO.md.
+services:
+  registry:
+    ports: ["${PRIVATE_IP:?Configura PRIVATE_IP}:8090:8090"]
+  config:
+    ports: ["${PRIVATE_IP:?Configura PRIVATE_IP}:7071:7071"]
+  auth:
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://${NODE_A_IP}:7071
+      SERVICE_HOST: ${PRIVATE_IP:?Configura PRIVATE_IP}
+      EUREKA_URI: http://${NODE_A_IP:?Configura NODE_A_IP}:8090/eureka/
+    ports: ["${PRIVATE_IP}:8081:8081"]
+  cliente:
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://${NODE_A_IP}:7071
+      SERVICE_HOST: ${PRIVATE_IP}
+      EUREKA_URI: http://${NODE_A_IP}:8090/eureka/
+    ports: ["${PRIVATE_IP}:8083:8083"]
+  book:
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://${NODE_A_IP}:7071
+      SERVICE_HOST: ${PRIVATE_IP}
+      EUREKA_URI: http://${NODE_A_IP}:8090/eureka/
+    ports: ["${PRIVATE_IP}:8082:8082"]
+  venta:
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://${NODE_A_IP}:7071
+      SERVICE_HOST: ${PRIVATE_IP}
+      EUREKA_URI: http://${NODE_A_IP}:8090/eureka/
+    ports: ["${PRIVATE_IP}:8084:8084"]

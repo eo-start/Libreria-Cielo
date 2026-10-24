@@ -1,0 +1,10 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+spring:
+  cloud:
+    config:
+      enabled: false
+eureka:
+  client:
+    enabled: false
+jwt:
+  secret: test-secret-used-only-in-isolated-tests-123456789

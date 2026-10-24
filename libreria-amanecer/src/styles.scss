@@ -1,0 +1,87 @@
+/* Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* Loading spinner */
+.spinner {
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #2563eb;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Badge de estado */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+.badge-green  { @apply bg-green-100 text-green-800; }
+.badge-red    { @apply bg-red-100 text-red-800; }
+.badge-yellow { @apply bg-yellow-100 text-yellow-800; }
+.badge-blue   { @apply bg-blue-100 text-blue-800; }
+.badge-gray   { @apply bg-gray-100 text-gray-800; }
+
+/* Tabla */
+.tabla { @apply w-full text-sm text-left; }
+.tabla thead { @apply bg-gray-50 text-gray-600 uppercase text-xs; }
+.tabla th { @apply px-4 py-3 font-semibold; }
+.tabla td { @apply px-4 py-3 border-b border-gray-100; }
+.tabla tbody tr { @apply hover:bg-blue-50 transition-colors; }
+
+/* Card */
+.card { @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6; }
+
+/* Input */
+.input-field {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
+         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+         transition-all;
+}
+.input-field.ng-invalid.ng-touched { @apply border-red-400 ring-1 ring-red-400; }
+
+/* Botones */
+.btn-primary  { @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2; }
+.btn-success  { @apply bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2; }
+.btn-danger   { @apply bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2; }
+.btn-secondary{ @apply bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2; }
+
+/* Modal overlay */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+.modal-box {
+  @apply bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6;
+}
+
+/* Error message */
+.error-msg { @apply text-red-500 text-xs mt-1; }
+
+/* SweetAlert2 override */
+.swal2-popup { border-radius: 0.75rem !important; font-family: inherit !important; }
+.swal2-confirm { background-color: #2563eb !important; border-radius: 0.5rem !important; }
+.swal2-cancel  { background-color: #6b7280 !important; border-radius: 0.5rem !important; }

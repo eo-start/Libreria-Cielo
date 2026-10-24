@@ -1,0 +1,49 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+server:
+  port: ${SERVER_PORT:8095}
+spring:
+  application:
+    name: ms-gateway-service
+  cloud:
+    config:
+      enabled: false
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      routes:
+        - id: book
+          uri: lb://ms-book-service
+          predicates:
+            - Path=/libros/**,/categoria/**,/provedores/**,/proveedores/**
+        - id: cliente
+          uri: lb://ms-cliente-service
+          predicates:
+            - Path=/cliente/**,/clientes/**,/vendedor/**,/vendedores/**
+        - id: venta
+          uri: lb://ms-venta-service
+          predicates:
+            - Path=/venta/**,/carrito/**,/servicio/**
+        - id: auth
+          uri: lb://ms-auth-service
+          predicates:
+            - Path=/auth/**,/usuario/**
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8090/eureka/}
+  instance:
+    prefer-ip-address: true
+    ip-address: ${SERVICE_HOST:127.0.0.1}
+jwt:
+  secret: ${JWT_SECRET}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

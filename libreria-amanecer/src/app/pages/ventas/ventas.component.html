@@ -1,0 +1,345 @@
+<!-- Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md. -->
+<div *ngIf="ventaPendiente" class="mb-4 p-4 rounded-lg border border-yellow-400 bg-yellow-50">
+  <p>La venta {{ ventaPendiente.id }} está pendiente de confirmación. Reintentar conserva sus productos y evita descontar stock dos veces.</p>
+  <button (click)="reintentarPendiente()" [disabled]="procesando" class="btn-primary mt-2">Reintentar confirmación</button>
+</div>
+<div class="p-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Punto de Venta</h1>
+    <p class="text-gray-500 text-sm mt-1">Registra una nueva venta</p>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <!-- IZQUIERDA: Agregar productos -->
+    <div class="space-y-4">
+      <div class="card">
+        <h2 class="font-semibold text-gray-700 mb-4"><i class="fas fa-plus-circle text-blue-500 mr-2"></i>Agregar productos</h2>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Producto</label>
+            <select [(ngModel)]="productoSeleccionado" class="input-field">
+              <option [ngValue]="null">Seleccionar producto...</option>
+              <option *ngFor="let p of productos" [ngValue]="p">
+                {{ p.codigo }} - {{ p.nombre }} (S/ {{ p.precio | number:'1.2-2' }}) | Stock: {{ p.stock }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+            <input [(ngModel)]="cantidad" type="number" min="1" class="input-field" placeholder="1">
+          </div>
+          <button (click)="agregarAlCarrito()" class="btn-primary w-full justify-center">
+            <i class="fas fa-cart-plus"></i> Agregar al carrito
+          </button>
+        </div>
+      </div>
+
+      <!-- Carrito -->
+      <div class="card">
+        <h2 class="font-semibold text-gray-700 mb-3">
+          <i class="fas fa-shopping-cart text-blue-500 mr-2"></i>Carrito
+          <span class="ml-2 badge badge-blue">{{ carrito.length }} items</span>
+        </h2>
+        <div *ngIf="carrito.length === 0" class="text-center text-gray-400 py-6">
+          <i class="fas fa-shopping-cart text-3xl mb-2 block text-gray-300"></i>
+          El carrito está vacío
+        </div>
+        <div *ngIf="carrito.length > 0" class="overflow-x-auto">
+          <table class="tabla text-xs">
+            <thead><tr>
+              <th>Producto</th><th>Cant.</th><th>P. Unit.</th><th>Subtotal</th><th></th>
+            </tr></thead>
+            <tbody>
+              <tr *ngFor="let item of carrito; let i = index">
+                <td>
+                  <span class="font-mono text-blue-600 text-xs">{{ item.producto.codigo }}</span><br>
+                  <span class="text-gray-700">{{ item.producto.nombre }}</span>
+                  <span *ngIf="esMayoristaItem(item)"
+                        class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold"
+                        style="background:#dcfce7;color:#15803d">
+                    MAYORISTA
+                  </span>
+                </td>
+                <td>
+                  <input [(ngModel)]="item.cantidad" type="number" min="1" [max]="item.producto.stock"
+                         class="w-16 input-field text-center text-xs py-1">
+                </td>
+                <td>
+                  <ng-container *ngIf="esMayoristaItem(item); else precioNormal">
+                    <s class="text-gray-400">S/ {{ item.producto.precio | number:'1.2-2' }}</s><br>
+                    <span class="font-semibold text-green-600">S/ {{ precioFinalItem(item) | number:'1.2-2' }}</span>
+                    <span class="ml-1 text-green-600 font-bold text-xs">-{{ MAYORISTA_PORC * 100 | number:'1.0-0' }}%</span>
+                  </ng-container>
+                  <ng-template #precioNormal>
+                    S/ {{ item.producto.precio | number:'1.2-2' }}
+                  </ng-template>
+                </td>
+                <td class="font-semibold" [class.text-green-600]="esMayoristaItem(item)">
+                  S/ {{ subtotalItem(item) | number:'1.2-2' }}
+                </td>
+                <td>
+                  <button (click)="eliminarDelCarrito(i)" class="text-red-500 hover:text-red-700 p-1">
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DERECHA: Información de venta -->
+    <div class="space-y-4">
+
+      <!-- Cliente -->
+      <div class="card">
+        <h2 class="font-semibold text-gray-700 mb-3">
+          <i class="fas fa-user text-blue-500 mr-2"></i>Cliente
+          <span *ngIf="tipoBadge === 'registrado'" class="ml-2 badge badge-green text-xs">
+            <i class="fas fa-check-circle mr-1"></i>Registrado
+          </span>
+          <span *ngIf="tipoBadge === 'casual'" class="ml-2 badge badge-gray text-xs">
+            <i class="fas fa-user mr-1"></i>Casual
+          </span>
+        </h2>
+        <div class="relative">
+          <input [(ngModel)]="busquedaCliente"
+                 (ngModelChange)="onBusquedaChange()"
+                 (blur)="onBlurCliente()"
+                 type="text"
+                 placeholder="Nombre o DNI — escribe para buscar o ingresa nombre libre..."
+                 class="input-field">
+          <div *ngIf="showDropdown && clientesFiltrados.length > 0"
+               class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-52 overflow-y-auto">
+            <button *ngFor="let c of clientesFiltrados"
+                    (mousedown)="seleccionarCliente(c)"
+                    class="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm border-b border-gray-100 last:border-0 flex items-center justify-between">
+              <div>
+                <span class="font-medium text-gray-800">{{ c.nombreCompleto }}</span>
+                <span class="text-gray-400 text-xs ml-2">DNI: {{ c.dni }}</span>
+              </div>
+              <span class="badge badge-green text-xs">Registrado</span>
+            </button>
+          </div>
+        </div>
+        <div *ngIf="clienteRegistrado" class="mt-2 p-2.5 rounded-lg bg-green-50 border border-green-200 text-sm flex items-center gap-2">
+          <i class="fas fa-user-check text-green-600"></i>
+          <div>
+            <p class="font-semibold text-gray-800">{{ clienteRegistrado.nombreCompleto }}</p>
+            <p class="text-gray-500 text-xs">{{ clienteRegistrado.codigo }} | DNI: {{ clienteRegistrado.dni }}</p>
+          </div>
+        </div>
+        <div *ngIf="tipoBadge === 'casual' && !clienteRegistrado" class="mt-2 p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm flex items-center gap-2">
+          <i class="fas fa-user text-gray-500"></i>
+          <p class="text-gray-700">Cliente casual: <strong>{{ clienteCasual }}</strong></p>
+        </div>
+        <p class="text-xs text-gray-400 mt-1">
+          <i class="fas fa-info-circle mr-1"></i>Puedes seleccionar un cliente registrado o escribir un nombre libre.
+        </p>
+      </div>
+
+      <!-- Método de Pago -->
+      <div class="card">
+        <h2 class="font-semibold text-gray-700 mb-3">
+          <i class="fas fa-credit-card text-blue-500 mr-2"></i>Método de pago
+        </h2>
+
+        <!-- Cards de selección -->
+        <div class="grid grid-cols-3 gap-2 mb-4">
+
+          <!-- EFECTIVO -->
+          <button (click)="seleccionarMetodo('EFECTIVO')"
+                  class="relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-150 focus:outline-none"
+                  [style.borderColor]="metodoPago === 'EFECTIVO' ? '#16a34a' : '#e5e7eb'"
+                  [style.backgroundColor]="metodoPago === 'EFECTIVO' ? '#f0fdf4' : '#ffffff'">
+            <span class="text-2xl">💵</span>
+            <span class="text-xs font-semibold" [style.color]="metodoPago === 'EFECTIVO' ? '#16a34a' : '#6b7280'">Efectivo</span>
+            <span *ngIf="metodoPago === 'EFECTIVO'"
+                  class="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-white text-xs"
+                  style="background:#16a34a">✓</span>
+          </button>
+
+          <!-- YAPE / PLIN -->
+          <button (click)="seleccionarMetodo('YAPE_PLIN')"
+                  class="relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-150 focus:outline-none"
+                  [style.borderColor]="metodoPago === 'YAPE_PLIN' ? '#6C2D91' : '#e5e7eb'"
+                  [style.backgroundColor]="metodoPago === 'YAPE_PLIN' ? '#faf5ff' : '#ffffff'">
+            <div class="flex gap-0.5">
+              <span class="text-lg leading-none" style="color:#6C2D91">Y</span>
+              <span class="text-lg leading-none" style="color:#00B14F">P</span>
+            </div>
+            <span class="text-xs font-semibold" [style.color]="metodoPago === 'YAPE_PLIN' ? '#6C2D91' : '#6b7280'">Yape/Plin</span>
+            <span *ngIf="metodoPago === 'YAPE_PLIN'"
+                  class="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-white text-xs"
+                  style="background:#6C2D91">✓</span>
+          </button>
+
+          <!-- TRANSFERENCIA BCP -->
+          <button (click)="seleccionarMetodo('TRANSFERENCIA')"
+                  class="relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-150 focus:outline-none"
+                  [style.borderColor]="metodoPago === 'TRANSFERENCIA' ? '#003A70' : '#e5e7eb'"
+                  [style.backgroundColor]="metodoPago === 'TRANSFERENCIA' ? '#eff6ff' : '#ffffff'">
+            <span class="text-xl font-bold" style="color:#003A70;font-family:serif;line-height:1.5">BCP</span>
+            <span class="text-xs font-semibold" [style.color]="metodoPago === 'TRANSFERENCIA' ? '#003A70' : '#6b7280'">Transferencia</span>
+            <span *ngIf="metodoPago === 'TRANSFERENCIA'"
+                  class="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-white text-xs"
+                  style="background:#003A70">✓</span>
+          </button>
+        </div>
+
+        <!-- Panel EFECTIVO -->
+        <div *ngIf="metodoPago === 'EFECTIVO'" class="rounded-xl border-2 border-green-200 bg-green-50 p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-money-bill-wave text-green-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-green-800">Pago en efectivo</p>
+              <p class="text-lg font-bold text-green-700">S/ {{ total | number:'1.2-2' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel YAPE / PLIN -->
+        <div *ngIf="metodoPago === 'YAPE_PLIN'" class="rounded-xl border-2 p-4" style="border-color:#6C2D91;background:#faf5ff">
+          <div class="flex gap-4 items-start">
+            <!-- QR simulado -->
+            <div class="flex-shrink-0">
+              <p class="text-sm text-purple-700">Verifica el pago recibido en la aplicación oficial del comercio. Este sistema registra el pago manualmente.</p>
+            </div>
+            <!-- Info de pago -->
+            <div class="flex-1 space-y-1.5 text-sm">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-bold text-base" style="color:#6C2D91">Yape</span>
+                <span class="text-gray-400">/</span>
+                <span class="font-bold text-base" style="color:#00B14F">Plin</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Número</span>
+                <span class="font-semibold text-gray-800 font-mono">999-888-777</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Nombre</span>
+                <span class="font-semibold text-gray-800">Librería Amanecer</span>
+              </div>
+              <div class="flex justify-between border-t border-purple-200 pt-1.5 mt-1.5">
+                <span class="text-gray-500">Monto</span>
+                <span class="font-bold text-lg" style="color:#6C2D91">S/ {{ total | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+          <button (click)="registrarVenta()"
+                  [disabled]="procesando || carrito.length === 0 || !tieneCliente"
+                  class="mt-4 w-full flex items-center justify-center gap-2 text-white font-semibold py-2.5 px-4 rounded-lg transition-opacity disabled:opacity-50"
+                  style="background:#6C2D91">
+            <span *ngIf="!procesando"><i class="fas fa-check-circle mr-1"></i>Confirmar pago recibido</span>
+            <span *ngIf="procesando" class="flex items-center gap-2">
+              <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Procesando...
+            </span>
+          </button>
+        </div>
+
+        <!-- Panel TRANSFERENCIA BCP -->
+        <div *ngIf="metodoPago === 'TRANSFERENCIA'" class="rounded-xl border-2 p-4" style="border-color:#003A70;background:#eff6ff">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl font-extrabold" style="color:#003A70;font-family:serif">BCP</span>
+            <span class="text-sm font-semibold text-gray-600">Banco de Crédito del Perú</span>
+          </div>
+          <div class="space-y-2 text-sm mb-3">
+            <div class="flex justify-between">
+              <span class="text-gray-500">Cuenta ahorros</span>
+              <span class="font-mono font-semibold text-gray-800">191-12345678-0-12</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">CCI</span>
+              <span class="font-mono font-semibold text-gray-800 text-xs">00219100123456780112</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Titular</span>
+              <span class="font-semibold text-gray-800">Librería Amanecer S.A.C.</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">RUC</span>
+              <span class="font-mono font-semibold text-gray-800">20123456789</span>
+            </div>
+            <div class="flex justify-between border-t pt-2" style="border-color:#93c5fd">
+              <span class="text-gray-500">Monto</span>
+              <span class="font-bold text-lg" style="color:#003A70">S/ {{ total | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm font-semibold mb-1" style="color:#003A70">
+              <i class="fas fa-hashtag mr-1"></i>N° de operación <span class="text-red-500">*</span>
+            </label>
+            <input [(ngModel)]="nroOperacion"
+                   type="text"
+                   placeholder="Ingresa el número de operación..."
+                   maxlength="20"
+                   class="input-field font-mono"
+                   [class.border-blue-400]="nroOperacion.trim().length >= 4">
+            <p *ngIf="nroOperacion.trim().length > 0 && nroOperacion.trim().length < 4"
+               class="mt-1 text-xs text-red-500">Mínimo 4 caracteres</p>
+          </div>
+          <button (click)="registrarVenta()"
+                  [disabled]="procesando || carrito.length === 0 || !tieneCliente || nroOperacion.trim().length < 4"
+                  class="w-full flex items-center justify-center gap-2 text-white font-semibold py-2.5 px-4 rounded-lg transition-opacity disabled:opacity-50"
+                  style="background:#003A70">
+            <span *ngIf="!procesando"><i class="fas fa-check-circle mr-1"></i>Confirmar transferencia</span>
+            <span *ngIf="procesando" class="flex items-center gap-2">
+              <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Procesando...
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Resumen -->
+      <div class="card">
+        <h2 class="font-semibold text-gray-700 mb-4">
+          <i class="fas fa-receipt text-blue-500 mr-2"></i>Resumen
+          <span *ngIf="esMayoristaVenta" class="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#dcfce7;color:#15803d">
+            <i class="fas fa-tag mr-1"></i>VENTA MAYORISTA
+          </span>
+        </h2>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>S/ {{ subtotal | number:'1.2-2' }}</span>
+          </div>
+          <div *ngIf="descuentoTotal > 0" class="flex justify-between font-semibold" style="color:#16a34a">
+            <span><i class="fas fa-tag mr-1"></i>Ahorro (mayorista)</span>
+            <span>-S/ {{ descuentoTotal | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between text-gray-600">
+            <span>IGV (18%)</span>
+            <span>S/ {{ igv | number:'1.2-2' }}</span>
+          </div>
+          <div class="border-t border-gray-200 pt-2 flex justify-between font-bold text-lg text-gray-800">
+            <span>Total</span>
+            <span class="text-blue-600">S/ {{ total | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex gap-3">
+        <button (click)="limpiarCarrito()" class="btn-secondary flex-1 justify-center">
+          <i class="fas fa-times"></i> Cancelar
+        </button>
+        <!-- Botón registrar solo aparece para EFECTIVO; Yape y BCP tienen su propio botón en el panel -->
+        <button *ngIf="metodoPago === 'EFECTIVO'"
+                (click)="registrarVenta()"
+                [disabled]="!puedeRegistrar || procesando"
+                class="btn-success flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+          <span *ngIf="!procesando"><i class="fas fa-check"></i> Registrar venta</span>
+          <span *ngIf="procesando" class="flex items-center gap-2">
+            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            Procesando...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

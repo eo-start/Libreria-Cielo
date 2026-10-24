@@ -1,0 +1,23 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+spring:
+  application:
+    name: ms-cliente-service
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:h2:mem:mscliente;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+eureka:
+  client:
+    enabled: false
+jwt:
+  secret: test-secret-used-only-in-isolated-tests-123456789
+app:
+  seed-demo-data: false

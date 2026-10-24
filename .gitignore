@@ -1,0 +1,19 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+venta-libros.rar
+venta-libros.rar
+.idea/
+
+# Archivos locales y generados
+**/target/
+**/node_modules/
+**/dist/
+**/.angular/
+**/.idea/
+*.log
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+.local/

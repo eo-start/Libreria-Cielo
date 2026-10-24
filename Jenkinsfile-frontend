@@ -1,0 +1,79 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+pipeline {
+    agent any
+
+    tools {
+        nodejs "NODE_HOME"
+    }
+
+    stages {
+        stage('Clone') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    dir('libreria-amanecer') {
+                        sh 'npm ci --legacy-peer-deps'
+                    }
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    dir('libreria-amanecer') {
+                        sh 'npm run build'
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    withSonarQubeEnv('sonarqube') {
+                        dir('libreria-amanecer') {
+                            sh '''
+                                npx sonar-scanner \
+                                -Dsonar.projectKey=libreria-amanecer \
+                                -Dsonar.projectName=libreria-amanecer \
+                                -Dsonar.sources=src \
+                                -Dsonar.exclusions=**/node_modules/**,**/*.spec.ts,**/dist/** \
+                                -Dsonar.host.url=$SONAR_HOST_URL
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                sleep(10)
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Archivar artefactos') {
+            steps {
+                archiveArtifacts artifacts: 'libreria-amanecer/dist/libreria-amanecer/**', fingerprint: true
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline frontend ejecutado correctamente.'
+        }
+        failure {
+            echo 'El pipeline frontend falló. Revisar consola de Jenkins.'
+        }
+    }
+}

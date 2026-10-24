@@ -1,0 +1,11 @@
+# Condiciones de uso - Librería Cielo
+
+Esta entrega y su adaptación están destinadas exclusivamente al sistema de Librería Cielo. No se concede autorización general para explotar, comercializar, redistribuir o reutilizar la adaptación en otros proyectos. Cualquier otro uso requiere autorización de los titulares de los derechos aplicables.
+
+Los dos colaboradores del despliegue académico están autorizados por el coordinador a instalar, revisar e integrar únicamente los módulos asignados para esta misma entrega de Librería Cielo. Esta autorización no permite presentarlos como un proyecto propio independiente ni distribuir credenciales o datos.
+
+Las dependencias, componentes preexistentes y aportes de terceros conservan sus licencias, atribuciones y derechos. Este aviso no atribuye a Librería Cielo la autoría exclusiva del código base ni revoca permisos concedidos previamente por otros titulares. No se ha encontrado un archivo LICENSE general en la copia base revisada.
+
+La consulta y los forks dentro de GitHub se rigen por las condiciones de GitHub y por los derechos aplicables. Hacer público el código permite copiarlo mediante esas funciones: los comentarios y este aviso no son una barrera técnica contra la copia. No se afirma que puedan eliminarse esos derechos mediante una marca de agua.
+
+No existe garantía de idoneidad para producción ni certificación de seguridad. Los archivos .env, claves de AWS, secretos JWT, contraseñas y respaldos no forman parte de esta publicación.

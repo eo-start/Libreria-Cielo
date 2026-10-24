@@ -1,0 +1,135 @@
+<!-- Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md. -->
+<div class="p-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+    <p class="text-gray-500 text-sm mt-1">Bienvenido, <strong>{{ auth.getUsuario() }}</strong> — {{ auth.isAdmin() ? 'Administrador' : 'Usuario' }}</p>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex justify-center py-20">
+    <div class="spinner"></div>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Cards de estadísticas -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div class="card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">Ventas del día</p>
+            <p class="text-2xl font-bold text-gray-800 mt-1">S/ {{ stats.ventasHoy | number:'1.2-2' }}</p>
+            <p class="text-xs text-green-600 mt-1"><i class="fas fa-arrow-up mr-1"></i>Hoy</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+            <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">Productos activos</p>
+            <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.productosActivos }}</p>
+            <p class="text-xs text-blue-600 mt-1"><i class="fas fa-box mr-1"></i>En catálogo</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+            <i class="fas fa-box-open text-green-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">Servicios hoy</p>
+            <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.serviciosHoy }}</p>
+            <p class="text-xs text-purple-600 mt-1"><i class="fas fa-concierge-bell mr-1"></i>Realizados</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+            <i class="fas fa-concierge-bell text-purple-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">Stock bajo</p>
+            <p class="text-2xl font-bold text-red-600 mt-1">{{ stats.stockBajo }}</p>
+            <p class="text-xs text-red-500 mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>Requieren atención</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+            <i class="fas fa-warehouse text-red-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+      <!-- Gráfico ventas semanales -->
+      <div class="card xl:col-span-2">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Ventas de la semana</h2>
+          <span class="text-xs text-gray-400">Esta semana</span>
+        </div>
+        <div class="flex items-end gap-3 h-40">
+          <div *ngFor="let v of ventasPorDia" class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-xs text-gray-500">S/{{ v.valor > 0 ? (v.valor/1000 | number:'1.1-1') + 'k' : '0' }}</span>
+            <div class="w-full rounded-t-md transition-all duration-500"
+                 [style.height.%]="barHeight(v.valor)"
+                 [class]="v.valor > 0 ? 'bg-blue-500' : 'bg-gray-200'"
+                 style="min-height: 4px; max-height: 120px"></div>
+            <span class="text-xs font-medium text-gray-600">{{ v.dia }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alertas de stock -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold text-gray-700"><i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>Alertas de stock</h2>
+          <a routerLink="/inventario" class="text-xs text-blue-600 hover:underline">Ver todo</a>
+        </div>
+        <div *ngIf="alertasStock.length === 0" class="text-center text-gray-400 text-sm py-4">
+          <i class="fas fa-check-circle text-green-500 text-2xl mb-2 block"></i> Stock OK
+        </div>
+        <ul class="space-y-2">
+          <li *ngFor="let a of alertasStock" class="flex items-center justify-between p-2 rounded-lg bg-gray-50">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-exclamation-circle text-yellow-500 text-sm"></i>
+              <span class="text-sm text-gray-700 truncate max-w-[130px]">{{ a.producto }}</span>
+            </div>
+            <span [class]="getStockBadge(a.estado)">{{ a.stockActual }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Movimientos recientes -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold text-gray-700"><i class="fas fa-history text-blue-500 mr-2"></i>Ventas recientes</h2>
+        <a routerLink="/historial-ventas" class="text-xs text-blue-600 hover:underline">Ver historial completo</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="tabla">
+          <thead><tr>
+            <th>N° Venta</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Método</th><th>Estado</th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let v of ventasRecientes">
+              <td class="font-mono text-blue-600">{{ v.numeroVenta }}</td>
+              <td>{{ v.clienteNombre }}</td>
+              <td>{{ v.fecha }} {{ v.hora }}</td>
+              <td class="font-semibold">S/ {{ v.total | number:'1.2-2' }}</td>
+              <td><span class="badge badge-blue">{{ v.metodoPago }}</span></td>
+              <td><span [class]="getEstadoBadge(v.estado)">{{ v.estado }}</span></td>
+            </tr>
+            <tr *ngIf="ventasRecientes.length === 0">
+              <td colspan="6" class="text-center text-gray-400 py-4">Sin ventas recientes</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

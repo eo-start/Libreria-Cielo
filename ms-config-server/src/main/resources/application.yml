@@ -1,0 +1,20 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+server:
+  port: ${CONFIG_SERVER_PORT:${SERVER_PORT:7071}}
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native
+
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: file:../config-data,file:./config-data
+
+  security:
+    user:
+      name: ${CONFIG_SERVER_USER:root}
+      password: ${CONFIG_SERVER_PASSWORD}

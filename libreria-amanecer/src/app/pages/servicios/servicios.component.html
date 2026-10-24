@@ -1,0 +1,153 @@
+<!-- Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md. -->
+<div class="p-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Servicios</h1>
+    <p class="text-gray-500 text-sm mt-1">Fotocopiado, impresión, anillado y encuadernado</p>
+  </div>
+
+  <!-- Cards tipos de servicio -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div *ngFor="let t of tiposServicio"
+         class="card text-center hover:border-blue-300 hover:shadow-md transition-all cursor-pointer border-2 border-transparent"
+         (click)="form.patchValue({ tipoServicio: t.nombre, precioUnitario: t.precioBase })">
+      <i [class]="'fas ' + t.icono + ' text-blue-500 text-2xl mb-2 block'"></i>
+      <p class="font-semibold text-gray-700 text-sm">{{ t.nombre }}</p>
+      <p class="text-xs text-gray-400 mt-1">Base: S/ {{ t.precioBase | number:'1.2-2' }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <!-- Formulario -->
+    <div class="card">
+      <h2 class="font-semibold text-gray-700 mb-4"><i class="fas fa-plus-circle text-blue-500 mr-2"></i>Registrar servicio</h2>
+      <form [formGroup]="form" (ngSubmit)="registrar()">
+        <div class="space-y-3">
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de servicio *</label>
+            <select formControlName="tipoServicio" (change)="onTipoChange()" class="input-field">
+              <option value="">Seleccionar...</option>
+              <option *ngFor="let t of tiposServicio" [value]="t.nombre">{{ t.nombre }}</option>
+            </select>
+            <p *ngIf="f['tipoServicio'].invalid && f['tipoServicio'].touched" class="error-msg">Requerido.</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+            <input formControlName="cliente" type="text" placeholder="Nombre del cliente" class="input-field"
+                   (keypress)="soloLetras($event)">
+            <p *ngIf="f['cliente'].invalid && f['cliente'].touched" class="error-msg">Mínimo 2 caracteres.</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad *</label>
+              <input formControlName="cantidad" type="number" min="1" step="1" class="input-field">
+              <p *ngIf="f['cantidad'].invalid && f['cantidad'].touched" class="error-msg">Mínimo 1.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Precio unitario *</label>
+              <input formControlName="precioUnitario" type="number" step="0.01" min="0.01" class="input-field">
+            </div>
+          </div>
+
+          <div class="bg-blue-50 rounded-lg p-3 flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-700">Total a cobrar:</span>
+            <span class="text-xl font-bold text-blue-600">S/ {{ totalCalculado | number:'1.2-2' }}</span>
+          </div>
+
+          <!-- Método de pago -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Método de pago</label>
+            <div class="grid grid-cols-3 gap-2">
+
+              <!-- EFECTIVO -->
+              <button type="button" (click)="seleccionarMetodo('EFECTIVO')"
+                      class="relative flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all focus:outline-none"
+                      [style.borderColor]="metodoPago === 'EFECTIVO' ? '#16a34a' : '#e5e7eb'"
+                      [style.backgroundColor]="metodoPago === 'EFECTIVO' ? '#f0fdf4' : '#ffffff'">
+                <span class="text-xl">💵</span>
+                <span class="text-xs font-semibold" [style.color]="metodoPago === 'EFECTIVO' ? '#16a34a' : '#6b7280'">Efectivo</span>
+                <span *ngIf="metodoPago === 'EFECTIVO'" class="absolute top-1 right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-xs" style="background:#16a34a;font-size:9px">✓</span>
+              </button>
+
+              <!-- YAPE/PLIN -->
+              <button type="button" (click)="seleccionarMetodo('YAPE_PLIN')"
+                      class="relative flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all focus:outline-none"
+                      [style.borderColor]="metodoPago === 'YAPE_PLIN' ? '#6C2D91' : '#e5e7eb'"
+                      [style.backgroundColor]="metodoPago === 'YAPE_PLIN' ? '#faf5ff' : '#ffffff'">
+                <div class="flex gap-0.5 text-base leading-none">
+                  <span style="color:#6C2D91">Y</span><span style="color:#00B14F">P</span>
+                </div>
+                <span class="text-xs font-semibold" [style.color]="metodoPago === 'YAPE_PLIN' ? '#6C2D91' : '#6b7280'">Yape/Plin</span>
+                <span *ngIf="metodoPago === 'YAPE_PLIN'" class="absolute top-1 right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-xs" style="background:#6C2D91;font-size:9px">✓</span>
+              </button>
+
+              <!-- TRANSFERENCIA -->
+              <button type="button" (click)="seleccionarMetodo('TRANSFERENCIA')"
+                      class="relative flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all focus:outline-none"
+                      [style.borderColor]="metodoPago === 'TRANSFERENCIA' ? '#003A70' : '#e5e7eb'"
+                      [style.backgroundColor]="metodoPago === 'TRANSFERENCIA' ? '#eff6ff' : '#ffffff'">
+                <span class="text-sm font-bold" style="color:#003A70;font-family:serif;line-height:1.6">BCP</span>
+                <span class="text-xs font-semibold" [style.color]="metodoPago === 'TRANSFERENCIA' ? '#003A70' : '#6b7280'">Transferencia</span>
+                <span *ngIf="metodoPago === 'TRANSFERENCIA'" class="absolute top-1 right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-xs" style="background:#003A70;font-size:9px">✓</span>
+              </button>
+            </div>
+
+            <!-- Campo N° operación solo para transferencia -->
+            <div *ngIf="metodoPago === 'TRANSFERENCIA'" class="mt-2">
+              <input [(ngModel)]="nroOperacion" [ngModelOptions]="{standalone: true}"
+                     type="text" maxlength="20"
+                     placeholder="N° de operación BCP (mín. 4 caracteres)"
+                     class="input-field font-mono"
+                     [class.border-blue-400]="nroOperacion.trim().length >= 4">
+              <p *ngIf="nroOperacion.trim().length > 0 && nroOperacion.trim().length < 4"
+                 class="mt-1 text-xs text-red-500">Mínimo 4 caracteres</p>
+            </div>
+          </div>
+
+          <button type="submit" [disabled]="procesando || !puedeRegistrar"
+                  class="btn-success w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+            <span *ngIf="!procesando"><i class="fas fa-check"></i> Registrar servicio</span>
+            <span *ngIf="procesando" class="flex items-center gap-2">
+              <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Guardando...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Servicios recientes -->
+    <div class="card">
+      <h2 class="font-semibold text-gray-700 mb-4"><i class="fas fa-clock text-blue-500 mr-2"></i>Servicios recientes</h2>
+      <div *ngIf="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
+      <div *ngIf="!loading" class="overflow-x-auto">
+        <table class="tabla text-sm">
+          <thead><tr>
+            <th>Tipo</th><th>Cliente</th><th>Cant.</th><th>Total</th><th>Método</th><th>Fecha</th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let s of recientes">
+              <td><span class="badge badge-blue">{{ s.tipoServicio }}</span></td>
+              <td>{{ s.cliente }}</td>
+              <td>{{ s.cantidad }}</td>
+              <td class="font-semibold">S/ {{ s.total | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge"
+                      [style.background]="s.metodoPago === 'YAPE_PLIN' ? '#f5f0fa' : s.metodoPago === 'TRANSFERENCIA' ? '#eff6ff' : '#f0fdf4'"
+                      [style.color]="s.metodoPago === 'YAPE_PLIN' ? '#6C2D91' : s.metodoPago === 'TRANSFERENCIA' ? '#003A70' : '#16a34a'">
+                  {{ s.metodoPago === 'YAPE_PLIN' ? 'Yape/Plin' : s.metodoPago === 'TRANSFERENCIA' ? 'BCP' : 'Efectivo' }}
+                </span>
+              </td>
+              <td class="text-xs text-gray-400">{{ s.fecha }} {{ s.hora }}</td>
+            </tr>
+            <tr *ngIf="recientes.length === 0">
+              <td colspan="6" class="text-center text-gray-400 py-6">Sin servicios registrados</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

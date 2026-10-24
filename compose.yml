@@ -1,0 +1,133 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+name: libreria
+x-app: &app
+  restart: unless-stopped
+  env_file: .env
+  networks: [libreria]
+  mem_limit: 640m
+  environment: &common
+    EUREKA_URI: http://registry:8090/eureka/
+    SPRING_CLOUD_CONFIG_ENABLED: "true"
+    SPRING_CONFIG_IMPORT: configserver:http://config:7071
+    SPRING_CLOUD_CONFIG_USERNAME: root
+    SPRING_CLOUD_CONFIG_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+    JWT_SECRET: ${JWT_SECRET:?Genera .env primero}
+    DB_PASSWORD: ${DB_PASSWORD}
+    SEED_DEMO_DATA: "true"
+    JAVA_TOOL_OPTIONS: -Xms64m -Xmx320m -XX:+ExitOnOutOfMemoryError
+  depends_on:
+    mysql: {condition: service_healthy}
+    registry: {condition: service_healthy}
+    config: {condition: service_healthy}
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    mem_limit: 768m
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init.sh:/docker-entrypoint-initdb.d/01-databases.sh:ro
+    command: ["--innodb-buffer-pool-size=128M", "--max-connections=60"]
+    networks: [libreria]
+    healthcheck:
+      test: [CMD-SHELL, 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      timeout: 3s
+      retries: 40
+  registry:
+    build: {context: ., args: {MODULE: ms-registry-server}}
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m
+    networks: [libreria]
+    healthcheck:
+      test: [CMD-SHELL, 'bash -c "</dev/tcp/localhost/8090"']
+      interval: 5s
+      timeout: 3s
+      retries: 40
+  config:
+    build: {context: ., args: {MODULE: ms-config-server}}
+    restart: unless-stopped
+    mem_limit: 384m
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms32m -Xmx192m
+      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:/config-data
+    volumes: [./config-data:/config-data:ro]
+    networks: [libreria]
+    healthcheck:
+      test: [CMD-SHELL, 'bash -c "</dev/tcp/localhost/7071"']
+      interval: 5s
+      timeout: 3s
+      retries: 40
+  auth:
+    <<: *app
+    build: {context: ., args: {MODULE: ms-auth}}
+    environment:
+      <<: *common
+      SERVICE_HOST: auth
+      DB_URL: jdbc:mysql://mysql:3306/ms_auth?serverTimezone=UTC
+      DB_USERNAME: ms_auth
+      BOOTSTRAP_ENABLED: "true"
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      CAJERO_PASSWORD: ${CAJERO_PASSWORD}
+      ALMACEN_PASSWORD: ${ALMACEN_PASSWORD}
+  book:
+    <<: *app
+    build: {context: ., args: {MODULE: ms-book}}
+    environment:
+      <<: *common
+      SERVICE_HOST: book
+      DB_URL: jdbc:mysql://mysql:3306/ms_book?serverTimezone=UTC
+      DB_USERNAME: ms_book
+      UPLOADS_DIR: /app/uploads
+    volumes: [book-uploads:/app/uploads]
+  cliente:
+    <<: *app
+    build: {context: ., args: {MODULE: ms-cliente}}
+    environment:
+      <<: *common
+      SERVICE_HOST: cliente
+      DB_URL: jdbc:mysql://mysql:3306/ms_cliente?serverTimezone=UTC
+      DB_USERNAME: ms_cliente
+  venta:
+    <<: *app
+    build: {context: ., args: {MODULE: ms-venta}}
+    environment:
+      <<: *common
+      SERVICE_HOST: venta
+      DB_URL: jdbc:mysql://mysql:3306/ms_venta?serverTimezone=UTC
+      DB_USERNAME: ms_venta
+  gateway:
+    build: {context: ., args: {MODULE: ms-gateway-service}}
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SERVICE_HOST: gateway
+      EUREKA_URI: http://registry:8090/eureka/
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m
+    depends_on: [registry, auth, book, cliente, venta]
+    networks: [libreria]
+  frontend:
+    build:
+      context: ./libreria-amanecer
+      secrets: [ca_bundle]
+    restart: unless-stopped
+    mem_limit: 96m
+    ports: ["127.0.0.1:4200:80"]
+    depends_on: [gateway]
+    networks: [libreria]
+networks:
+  libreria:
+volumes:
+  mysql-data:
+  book-uploads:
+
+secrets:
+  ca_bundle:
+    file: .local/ca.pem

@@ -1,0 +1,75 @@
+<!-- Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md. -->
+<!-- Backdrop para mobile cuando sidebar está expandido -->
+<div *ngIf="isMobile && !collapsed"
+     class="fixed inset-0 bg-black bg-opacity-50 z-40"
+     (click)="closeMobile()">
+</div>
+
+<aside
+  [style.width]="collapsed ? '64px' : '220px'"
+  [ngClass]="{
+    'fixed top-0 left-0 h-screen z-50': isMobile && !collapsed,
+    'min-h-screen flex-shrink-0': !isMobile || collapsed
+  }"
+  class="bg-blue-900 text-white flex flex-col transition-all duration-300 overflow-hidden">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between p-4 border-b border-blue-800">
+    <div *ngIf="!collapsed" class="flex items-center gap-3 overflow-hidden">
+      <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-book-open text-white"></i>
+      </div>
+      <div class="overflow-hidden">
+        <p class="font-bold text-sm leading-tight whitespace-nowrap">Librería Amanecer</p>
+        <p class="text-blue-300 text-xs whitespace-nowrap">Sistema de Gestión</p>
+      </div>
+    </div>
+    <div *ngIf="collapsed" class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center mx-auto">
+      <i class="fas fa-book-open text-white"></i>
+    </div>
+    <button (click)="toggle()"
+            class="text-blue-300 hover:text-white ml-auto pl-2 flex-shrink-0"
+            [title]="collapsed ? 'Expandir menú' : 'Colapsar menú'">
+      <i [class]="collapsed ? 'fas fa-chevron-right text-xs' : 'fas fa-chevron-left text-xs'"></i>
+    </button>
+  </div>
+
+  <!-- Navegación -->
+  <nav class="flex-1 py-4 overflow-y-auto overflow-x-hidden">
+    <ul class="space-y-0.5 px-2">
+      <li *ngFor="let item of visibleItems">
+        <a [routerLink]="item.route" routerLinkActive="bg-blue-600 text-white"
+           [routerLinkActiveOptions]="{exact: false}"
+           (click)="closeMobile()"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-blue-200 hover:bg-blue-700 hover:text-white transition-colors group"
+           [title]="collapsed ? item.label : ''">
+          <i [class]="item.icon" class="text-base w-5 text-center flex-shrink-0"></i>
+          <span *ngIf="!collapsed" class="text-sm font-medium whitespace-nowrap">{{ item.label }}</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Footer usuario -->
+  <div class="border-t border-blue-800 p-4">
+    <div *ngIf="!collapsed" class="flex items-center gap-3 mb-3">
+      <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-user text-white text-sm"></i>
+      </div>
+      <div class="overflow-hidden">
+        <p class="text-sm font-semibold truncate">{{ auth.getUsuario() }}</p>
+        <span class="text-xs px-1.5 py-0.5 rounded-full"
+              [class]="auth.isAdmin() ? 'bg-yellow-500 text-yellow-900' : auth.isAlmacen() ? 'bg-orange-500 text-orange-900' : 'bg-green-500 text-green-900'">
+          {{ auth.getRolLabel() }}
+        </span>
+      </div>
+    </div>
+    <button (click)="logout()"
+            [class]="collapsed ? 'justify-center' : ''"
+            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-blue-200 hover:bg-red-600 hover:text-white transition-colors text-sm"
+            title="Cerrar sesión">
+      <i class="fas fa-sign-out-alt flex-shrink-0"></i>
+      <span *ngIf="!collapsed" class="whitespace-nowrap">Cerrar sesión</span>
+    </button>
+  </div>
+</aside>

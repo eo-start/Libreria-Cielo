@@ -1,0 +1,178 @@
+<!-- Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md. -->
+<div class="p-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Productos</h1>
+      <p class="text-gray-500 text-sm mt-1">Gestión de catálogo de productos</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button (click)="exportarStockBajoPdf()" class="btn-danger" title="Ver y exportar productos con stock bajo">
+        <i class="fas fa-exclamation-triangle"></i>
+        Stock bajo
+        <span *ngIf="productosStockBajo > 0"
+              class="ml-1 bg-white text-red-600 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+          {{ productosStockBajo }}
+        </span>
+      </button>
+      <button *ngIf="auth.can('productos.crear')" (click)="abrirModal()" class="btn-primary">
+        <i class="fas fa-plus"></i> Nuevo producto
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-5">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="relative">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+        <input [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" type="text"
+               placeholder="Buscar por nombre o código..." class="input-field pl-9">
+      </div>
+      <select [(ngModel)]="filtroCategoria" (ngModelChange)="aplicarFiltros()" class="input-field">
+        <option value="">Todas las categorías</option>
+        <option *ngFor="let c of categoriasFiltro" [value]="c">{{ c }}</option>
+      </select>
+      <select [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()" class="input-field">
+        <option value="">Todos los estados</option>
+        <option value="ACTIVO">Activo</option>
+        <option value="STOCK_BAJO">Stock bajo</option>
+        <option value="INACTIVO">Inactivo</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Tabla con columna imagen -->
+  <div class="card">
+    <div *ngIf="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+    <div *ngIf="!loading" class="overflow-x-auto">
+      <table class="tabla">
+        <thead><tr>
+          <th class="w-14">Imagen</th>
+          <th>Código</th><th>Nombre</th><th>Categoría</th>
+          <th>Precio</th><th>Stock</th><th>Estado</th><th class="text-center">Acciones</th>
+        </tr></thead>
+        <tbody>
+          <tr *ngFor="let p of filtrados">
+            <td>
+              <img *ngIf="p.imagenUrl"
+                   [src]="'/api/libros/uploads/' + p.imagenUrl"
+                   class="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                   [alt]="p.nombre">
+              <div *ngIf="!p.imagenUrl"
+                   class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                <i class="fas fa-box text-gray-400 text-sm"></i>
+              </div>
+            </td>
+            <td class="font-mono text-blue-600 font-medium">{{ p.codigo }}</td>
+            <td class="font-medium text-gray-800">{{ p.nombre }}</td>
+            <td><span class="badge badge-blue">{{ p.categoria }}</span></td>
+            <td class="font-semibold">S/ {{ p.precio | number:'1.2-2' }}</td>
+            <td>
+              <span [class]="p.stock <= p.stockMinimo ? 'font-bold text-red-600' : 'text-gray-700'">{{ p.stock }}</span>
+            </td>
+            <td><span [class]="getBadge(p.estado)">{{ p.estado.replace('_', ' ') }}</span></td>
+            <td>
+              <div class="flex items-center justify-center gap-1">
+                <ng-container *ngIf="auth.can('productos.crear'); else soloVer">
+                  <button (click)="abrirModal(p)" title="Editar"
+                          class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors">
+                    <i class="fas fa-edit text-sm"></i>
+                  </button>
+                  <button *ngIf="auth.can('productos.eliminar')" (click)="eliminar(p)" title="Eliminar"
+                          class="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors">
+                    <i class="fas fa-trash text-sm"></i>
+                  </button>
+                </ng-container>
+                <ng-template #soloVer>
+                  <span class="text-xs text-gray-400 italic">Solo consulta</span>
+                </ng-template>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filtrados.length === 0">
+            <td colspan="8" class="text-center text-gray-400 py-8">
+              <i class="fas fa-box-open text-3xl mb-2 block"></i> No se encontraron productos
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal crear/editar -->
+<div *ngIf="showModal" class="modal-overlay" (click)="cerrarModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">
+        <i class="fas fa-box text-blue-500 mr-2"></i>
+        {{ editando ? 'Editar producto' : 'Nuevo producto' }}
+      </h3>
+      <button (click)="cerrarModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div class="space-y-3">
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del producto *</label>
+          <input formControlName="titulo" class="input-field" placeholder="Ej: Cuaderno cuadriculado A4"
+                 (keypress)="soloLetras($event)">
+          <p *ngIf="f['titulo'].invalid && f['titulo'].touched" class="error-msg">Mínimo 2 caracteres.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Categoría *</label>
+          <select formControlName="categoriaId" class="input-field">
+            <option [ngValue]="null">Seleccionar categoría...</option>
+            <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.nombre }}</option>
+          </select>
+          <p *ngIf="f['categoriaId'].invalid && f['categoriaId'].touched" class="error-msg">Selecciona una categoría.</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Precio (S/) *</label>
+            <input formControlName="precio" type="number" step="0.01" min="0.01" class="input-field" placeholder="0.00">
+            <p *ngIf="f['precio'].invalid && f['precio'].touched" class="error-msg">Precio requerido.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+            <input formControlName="stock" type="number" min="0" step="1" class="input-field" placeholder="0">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Stock mínimo *</label>
+            <input formControlName="stockMinimo" type="number" min="1" step="1" class="input-field" placeholder="10">
+          </div>
+        </div>
+
+        <div *ngIf="editando">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+          <select formControlName="estado" class="input-field">
+            <option value="ACTIVO">ACTIVO</option>
+            <option value="INACTIVO">INACTIVO</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Imagen <span class="text-gray-400 text-xs">(opcional — JPG, PNG, WEBP)</span>
+          </label>
+          <input type="file" accept="image/jpg,image/jpeg,image/png,image/webp"
+                 (change)="onImagenChange($event)"
+                 class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          <p *ngIf="imagenSeleccionada" class="text-xs text-green-600 mt-1">
+            <i class="fas fa-check mr-1"></i>{{ imagenSeleccionada.name }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 mt-5">
+        <button type="button" (click)="cerrarModal()" class="btn-secondary">Cancelar</button>
+        <button type="submit" class="btn-success">
+          <i class="fas fa-save"></i> {{ editando ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

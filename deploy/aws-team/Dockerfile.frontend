@@ -1,0 +1,6 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+FROM nginx:1.28-alpine
+COPY frontend-dist/ /usr/share/nginx/html/
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+ENV GATEWAY_HOST=gateway
+EXPOSE 80

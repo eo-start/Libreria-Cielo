@@ -1,0 +1,320 @@
+<!-- Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md. -->
+<div class="p-6">
+  <div class="mb-5">
+    <h1 class="text-2xl font-bold text-gray-800">Historial</h1>
+    <p class="text-gray-500 text-sm mt-1">Registro completo de transacciones y servicios</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-1 mb-5 border-b border-gray-200">
+    <button (click)="tabActual = 'ventas'"
+            class="px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors"
+            [class.bg-blue-600]="tabActual === 'ventas'"
+            [class.text-white]="tabActual === 'ventas'"
+            [class.text-gray-500]="tabActual !== 'ventas'"
+            [class.hover:bg-gray-100]="tabActual !== 'ventas'">
+      <i class="fas fa-shopping-cart mr-1.5"></i>Ventas
+      <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
+            [class.bg-blue-500]="tabActual === 'ventas'"
+            [class.text-white]="tabActual === 'ventas'"
+            [class.bg-gray-200]="tabActual !== 'ventas'"
+            [class.text-gray-600]="tabActual !== 'ventas'">{{ ventas.length }}</span>
+    </button>
+    <button (click)="tabActual = 'servicios'"
+            class="px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors"
+            [class.bg-purple-600]="tabActual === 'servicios'"
+            [class.text-white]="tabActual === 'servicios'"
+            [class.text-gray-500]="tabActual !== 'servicios'"
+            [class.hover:bg-gray-100]="tabActual !== 'servicios'">
+      <i class="fas fa-tools mr-1.5"></i>Servicios
+      <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
+            [class.bg-purple-500]="tabActual === 'servicios'"
+            [class.text-white]="tabActual === 'servicios'"
+            [class.bg-gray-200]="tabActual !== 'servicios'"
+            [class.text-gray-600]="tabActual !== 'servicios'">{{ servicios.length }}</span>
+    </button>
+    <button (click)="tabActual = 'todos'"
+            class="px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors"
+            [class.bg-teal-600]="tabActual === 'todos'"
+            [class.text-white]="tabActual === 'todos'"
+            [class.text-gray-500]="tabActual !== 'todos'"
+            [class.hover:bg-gray-100]="tabActual !== 'todos'">
+      <i class="fas fa-list-alt mr-1.5"></i>Todos
+      <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
+            [class.bg-teal-500]="tabActual === 'todos'"
+            [class.text-white]="tabActual === 'todos'"
+            [class.bg-gray-200]="tabActual !== 'todos'"
+            [class.text-gray-600]="tabActual !== 'todos'">{{ todos.length }}</span>
+    </button>
+  </div>
+
+  <!-- ═══════════ TAB VENTAS ═══════════ -->
+  <div *ngIf="tabActual === 'ventas'">
+    <!-- Cards resumen -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+      <div class="card text-center">
+        <p class="text-sm text-gray-500">Total ventas</p>
+        <p class="text-2xl font-bold text-blue-600">S/ {{ totalVentas | number:'1.2-2' }}</p>
+      </div>
+      <div class="card text-center">
+        <p class="text-sm text-gray-500">N° transacciones</p>
+        <p class="text-2xl font-bold text-gray-800">{{ ventasFiltradas.length }}</p>
+      </div>
+      <div class="card text-center">
+        <p class="text-sm text-gray-500">Ticket promedio</p>
+        <p class="text-2xl font-bold text-green-600">S/ {{ ticketPromedioV | number:'1.2-2' }}</p>
+      </div>
+    </div>
+
+    <!-- Filtros ventas -->
+    <div class="card mb-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input [(ngModel)]="busquedaV" (ngModelChange)="filtrarVentas()" type="text"
+                 placeholder="N° venta o cliente..." class="input-field pl-9">
+        </div>
+        <input [(ngModel)]="fechaInicioV" (ngModelChange)="filtrarVentas()" type="date" class="input-field">
+        <input [(ngModel)]="fechaFinV"    (ngModelChange)="filtrarVentas()" type="date" class="input-field">
+      </div>
+    </div>
+
+    <!-- Tabla ventas -->
+    <div class="card">
+      <div *ngIf="loadingVentas" class="flex justify-center py-12"><div class="spinner"></div></div>
+      <div *ngIf="!loadingVentas" class="overflow-x-auto">
+        <table class="tabla">
+          <thead><tr>
+            <th>N° Venta</th><th>Fecha</th><th>Hora</th><th>Cliente</th>
+            <th>Total</th><th>Estado</th><th class="text-center">Detalle</th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let v of ventasFiltradas">
+              <td class="font-mono text-blue-600 font-medium">{{ v.numeroVenta }}</td>
+              <td>{{ v.fecha }}</td>
+              <td>{{ v.hora }}</td>
+              <td>{{ v.clienteNombre }}</td>
+              <td class="font-semibold">S/ {{ v.total | number:'1.2-2' }}</td>
+              <td><span [class]="getBadge(v.estado)">{{ v.estado }}</span></td>
+              <td class="text-center">
+                <button (click)="descargarRecibo(v.id)" title="Descargar boleta PDF"
+                        class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50">
+                  <i class="fas fa-eye text-sm"></i>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="ventasFiltradas.length === 0">
+              <td colspan="7" class="text-center text-gray-400 py-8">
+                <i class="fas fa-history text-3xl mb-2 block text-gray-300"></i>
+                {{ loadingVentas ? 'Cargando...' : 'No hay ventas registradas' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB SERVICIOS ═══════════ -->
+  <div *ngIf="tabActual === 'servicios'">
+    <!-- Cards resumen -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+      <div class="card text-center">
+        <p class="text-sm text-gray-500">Total servicios</p>
+        <p class="text-2xl font-bold text-purple-600">S/ {{ totalServicios | number:'1.2-2' }}</p>
+      </div>
+      <div class="card text-center">
+        <p class="text-sm text-gray-500">N° servicios</p>
+        <p class="text-2xl font-bold text-gray-800">{{ serviciosFiltrados.length }}</p>
+      </div>
+      <div class="card text-center">
+        <p class="text-sm text-gray-500">Ticket promedio</p>
+        <p class="text-2xl font-bold text-green-600">S/ {{ ticketPromedioS | number:'1.2-2' }}</p>
+      </div>
+    </div>
+
+    <!-- Filtros servicios -->
+    <div class="card mb-4">
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input [(ngModel)]="busquedaS" (ngModelChange)="filtrarServicios()" type="text"
+                 placeholder="Tipo o cliente..." class="input-field pl-9">
+        </div>
+        <input [(ngModel)]="fechaInicioS" (ngModelChange)="filtrarServicios()" type="date" class="input-field">
+        <input [(ngModel)]="fechaFinS"    (ngModelChange)="filtrarServicios()" type="date" class="input-field">
+        <select [(ngModel)]="filtroMetodoS" (ngModelChange)="filtrarServicios()" class="input-field">
+          <option value="">Todos los métodos</option>
+          <option *ngFor="let m of metodosServicio" [value]="m">{{ labelMetodo(m) }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tabla servicios -->
+    <div class="card">
+      <div *ngIf="loadingServicios" class="flex justify-center py-12"><div class="spinner"></div></div>
+      <div *ngIf="!loadingServicios" class="overflow-x-auto">
+        <table class="tabla">
+          <thead><tr>
+            <th>Tipo</th><th>Cliente</th><th>Cant.</th><th>P. Unit.</th>
+            <th>Total</th><th>Método</th><th>Fecha</th><th>Hora</th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let s of serviciosFiltrados">
+              <td><span class="badge badge-blue">{{ s.tipoServicio }}</span></td>
+              <td>{{ s.cliente }}</td>
+              <td>{{ s.cantidad }}</td>
+              <td>S/ {{ s.precioUnitario | number:'1.2-2' }}</td>
+              <td class="font-semibold">S/ {{ s.total | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge"
+                      [style.background]="s.metodoPago === 'YAPE_PLIN' ? '#f5f0fa' : s.metodoPago === 'TRANSFERENCIA' ? '#eff6ff' : '#f0fdf4'"
+                      [style.color]="s.metodoPago === 'YAPE_PLIN' ? '#6C2D91' : s.metodoPago === 'TRANSFERENCIA' ? '#003A70' : '#16a34a'">
+                  {{ labelMetodo(s.metodoPago) }}
+                </span>
+              </td>
+              <td>{{ s.fecha }}</td>
+              <td class="text-gray-400">{{ s.hora }}</td>
+            </tr>
+            <tr *ngIf="serviciosFiltrados.length === 0">
+              <td colspan="8" class="text-center text-gray-400 py-8">
+                <i class="fas fa-tools text-3xl mb-2 block text-gray-300"></i>
+                {{ loadingServicios ? 'Cargando...' : 'No hay servicios registrados' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB TODOS ═══════════ -->
+  <div *ngIf="tabActual === 'todos'">
+    <!-- Cards resumen -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+      <div class="card text-center">
+        <p class="text-sm text-gray-500">Total combinado</p>
+        <p class="text-2xl font-bold text-teal-600">S/ {{ totalTodos | number:'1.2-2' }}</p>
+      </div>
+      <div class="card text-center">
+        <p class="text-sm text-gray-500">N° registros</p>
+        <p class="text-2xl font-bold text-gray-800">{{ todosFiltrados.length }}</p>
+      </div>
+      <div class="card text-center">
+        <p class="text-sm text-gray-500">Ticket promedio</p>
+        <p class="text-2xl font-bold text-green-600">S/ {{ ticketPromedioT | number:'1.2-2' }}</p>
+      </div>
+    </div>
+
+    <!-- Filtros todos -->
+    <div class="card mb-4">
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input [(ngModel)]="busquedaT" (ngModelChange)="filtrarTodos()" type="text"
+                 placeholder="N° registro o cliente..." class="input-field pl-9">
+        </div>
+        <input [(ngModel)]="fechaInicioT" (ngModelChange)="filtrarTodos()" type="date" class="input-field">
+        <input [(ngModel)]="fechaFinT"    (ngModelChange)="filtrarTodos()" type="date" class="input-field">
+        <select [(ngModel)]="filtroTipoT" (ngModelChange)="filtrarTodos()" class="input-field">
+          <option value="">Todos los tipos</option>
+          <option value="VENTA">Solo Ventas</option>
+          <option value="SERVICIO">Solo Servicios</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tabla todos -->
+    <div class="card">
+      <div *ngIf="loadingTodos" class="flex justify-center py-12"><div class="spinner"></div></div>
+      <div *ngIf="!loadingTodos" class="overflow-x-auto">
+        <table class="tabla">
+          <thead><tr>
+            <th>Tipo</th><th>N° Registro</th><th>Fecha</th><th>Hora</th><th>Cliente</th>
+            <th>Total</th><th>Método</th><th>Estado</th><th class="text-center">Detalle</th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let r of todosFiltrados">
+              <td>
+                <span *ngIf="r.tipo === 'VENTA'"    class="badge badge-blue">Venta</span>
+                <span *ngIf="r.tipo === 'SERVICIO'" class="badge badge-green">Servicio</span>
+              </td>
+              <td class="font-mono font-medium"
+                  [class.text-blue-600]="r.tipo === 'VENTA'"
+                  [class.text-green-600]="r.tipo === 'SERVICIO'">
+                {{ r.numero }}
+              </td>
+              <td>{{ r.fecha }}</td>
+              <td class="text-gray-400">{{ r.hora }}</td>
+              <td>{{ r.cliente }}</td>
+              <td class="font-semibold">S/ {{ r.total | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge"
+                      [style.background]="r.metodoPago === 'YAPE_PLIN' ? '#f5f0fa' : r.metodoPago === 'TRANSFERENCIA' ? '#eff6ff' : '#f0fdf4'"
+                      [style.color]="r.metodoPago === 'YAPE_PLIN' ? '#6C2D91' : r.metodoPago === 'TRANSFERENCIA' ? '#003A70' : '#16a34a'">
+                  {{ labelMetodo(r.metodoPago) }}
+                </span>
+              </td>
+              <td><span [class]="getBadge(r.estado)">{{ r.estado }}</span></td>
+              <td class="text-center">
+                <button *ngIf="r.tipo === 'VENTA'" (click)="descargarRecibo(r.id)"
+                        title="Descargar boleta PDF"
+                        class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50">
+                  <i class="fas fa-eye text-sm"></i>
+                </button>
+                <span *ngIf="r.tipo === 'SERVICIO'" class="text-gray-300 text-sm">—</span>
+              </td>
+            </tr>
+            <tr *ngIf="todosFiltrados.length === 0">
+              <td colspan="9" class="text-center text-gray-400 py-8">
+                <i class="fas fa-list text-3xl mb-2 block text-gray-300"></i>
+                {{ loadingTodos ? 'Cargando...' : 'No hay registros' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detalle venta -->
+<div *ngIf="ventaDetalle" class="modal-overlay" (click)="cerrarDetalle()">
+  <div class="modal-box max-w-2xl" (click)="$event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">
+        <i class="fas fa-receipt text-blue-500 mr-2"></i>Detalle — {{ ventaDetalle.numeroVenta }}
+      </h3>
+      <button (click)="cerrarDetalle()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
+      <div><span class="text-gray-500">Cliente:</span> <strong>{{ ventaDetalle.clienteNombre }}</strong></div>
+      <div><span class="text-gray-500">Fecha:</span> {{ ventaDetalle.fecha }} {{ ventaDetalle.hora }}</div>
+      <div><span class="text-gray-500">Estado:</span> <span [class]="getBadge(ventaDetalle.estado)">{{ ventaDetalle.estado }}</span></div>
+    </div>
+    <div class="overflow-x-auto mb-4">
+      <table class="tabla text-sm">
+        <thead><tr><th>Producto</th><th>Cant.</th><th>P. Unit.</th><th>Subtotal</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let d of ventaDetalle.detalles">
+            <td>{{ d.producto }}</td>
+            <td>{{ d.cantidad }}</td>
+            <td>S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
+            <td class="font-semibold">S/ {{ d.subtotal | number:'1.2-2' }}</td>
+          </tr>
+          <tr *ngIf="ventaDetalle.detalles.length === 0">
+            <td colspan="4" class="text-center text-gray-400 py-3">Sin detalles</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="border-t pt-3 space-y-1 text-sm text-right">
+      <p class="text-gray-500">Subtotal: S/ {{ ventaDetalle.subtotal | number:'1.2-2' }}</p>
+      <p class="text-gray-500">IGV (18%): S/ {{ ventaDetalle.igv | number:'1.2-2' }}</p>
+      <p class="text-lg font-bold text-blue-600">Total: S/ {{ ventaDetalle.total | number:'1.2-2' }}</p>
+    </div>
+    <div class="flex justify-end mt-4">
+      <button (click)="cerrarDetalle()" class="btn-secondary">Cerrar</button>
+    </div>
+  </div>
+</div>

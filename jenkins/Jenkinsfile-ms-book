@@ -1,0 +1,13 @@
+# Libreria Cielo | Uso exclusivo autorizado para este proyecto. Otros usos prohibidos salvo derechos o licencias previos. Ver USO_RESTRINGIDO.md.
+pipeline {
+    agent any
+    tools { maven "MAVEN_HOME" }
+    stages {
+        stage('Checkout') { steps { checkout scm } }
+        stage('Build') { steps { timeout(time:4, unit:'MINUTES') { sh "mvn -DskipTests clean package -f ms-book/pom.xml" } } }
+        stage('Test') { steps { timeout(time:4, unit:'MINUTES') { sh "mvn test jacoco:report -f ms-book/pom.xml" } } }
+        stage('Sonar') { steps { timeout(time:4, unit:'MINUTES') { withSonarQubeEnv('sonarqube') { sh "mvn sonar:sonar -f ms-book/pom.xml -Dsonar.projectKey=ms-book -Dsonar.projectName=ms-book -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml" } } } }
+        stage('Quality Gate') { steps { sleep(10); timeout(time:2, unit:'MINUTES') { waitForQualityGate abortPipeline: true } } }
+        stage('Archivar artefactos') { steps { archiveArtifacts artifacts: 'ms-book/target/*.jar', fingerprint: true } }
+    }
+}
