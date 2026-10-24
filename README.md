@@ -83,14 +83,3 @@ Las pruebas Java usan H2 aislado. Incluyen controles de autorización, reserva a
 
 Las pruebas antiguas `*IntegrationTest` que requieren endpoints externos están excluidas del ciclo normal de Venta. No equivalen a la verificación HTTP nueva. La validación de dependencias y el hardening de producción son tareas separadas; pasar estas pruebas no certifica ausencia de vulnerabilidades.
 
-## Repartir el proyecto entre tres cuentas AWS Academy
-
-Consultar **[docs/DESPLIEGUE_EQUIPO.md](docs/DESPLIEGUE_EQUIPO.md)** y **[deploy/distributed.yml](deploy/distributed.yml)**. La distribución propuesta es:
-
-- A: Frontend, Gateway, Registry y Config Server.
-- B: Auth, Cliente y MySQL de esos dominios.
-- C: Book, Venta, MySQL e imágenes de esos dominios.
-
-Los tres nodos requieren conectividad privada, CIDR distintos, rutas, puertos y una clave JWT común compartida de forma segura. Los presupuestos no se combinan. El overlay prepara la configuración; no crea infraestructura ni demuestra que VPC Peering esté permitido en todas las cuentas del equipo.
-
-La entrega empaquetada para tres cuentas, con HTTPS y credenciales separadas, se documenta en [deploy/aws-team/GUIA_DESPLIEGUE_AWS.md](deploy/aws-team/GUIA_DESPLIEGUE_AWS.md). Los scripts `tools/prepare-aws-team.py` y `tools/finalize-aws-team.py` preparan y revisan los ZIP después de compilar y verificar; no despliegan recursos AWS.
